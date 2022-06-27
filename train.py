@@ -93,7 +93,7 @@ def train(args, hparams):
                         x, y = batch
                         x = torch.unsqueeze(x, 1)
                         y_hat = model(x.to(device))
-
+                        y = y.to(device)
                         loss_val = loss(y_hat, y)
                         val_err_total += loss_val
                     
