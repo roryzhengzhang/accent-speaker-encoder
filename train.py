@@ -101,7 +101,7 @@ def train(args, hparams):
                         y = y.to(device)
                         loss_val = loss(y_hat, y)
                         val_err_total += loss_val
-                        correct += (y, y_hat).float().sum()
+                        correct += (y == y_hat).float().sum()
                     
                     val_err_avg = val_err_total / (j+1)
                     accuracy = correct * 100 / total_val
