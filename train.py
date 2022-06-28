@@ -36,12 +36,15 @@ def train(args, hparams):
     scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=hparams.lr_decay, last_epoch=last_epoch)
     
     trainset = AccentDataset(args.training_file, hparams)
+    total_train = len(trainset)
     train_loader = DataLoader(trainset, num_workers=hparams.num_workers, shuffle=True, batch_size=hparams.batch_size)
     
     valset = AccentDataset(args.validation_file, hparams)
+    total_val = len(valset)
     val_loader = DataLoader(valset, num_workers=1, shuffle=False, batch_size=1)
     # tensorboard
     sw = SummaryWriter(os.path.join(args.checkpoint_path, 'logs'))
+    train_start = time.time()
 
     loss = CrossEntropyLoss(reduction='mean')
     model.train()
@@ -82,12 +85,14 @@ def train(args, hparams):
             
             if steps % args.summary_interval == 0:
                 sw.add_scalar("loss/train", loss_train, steps)
+                sw.add_scalar('time/train', (time.time()-train_start)/60, steps)
             
             # Validation
             if steps % args.validation_interval == 0:
                 model.eval()
                 torch.cuda.empty_cache()
                 val_err_total = 0
+                correct = 0
                 with torch.no_grad():
                     for j, batch in enumerate(val_loader):
                         x, y = batch
@@ -96,9 +101,12 @@ def train(args, hparams):
                         y = y.to(device)
                         loss_val = loss(y_hat, y)
                         val_err_total += loss_val
+                        correct += (y, y_hat).float().sum()
                     
                     val_err_avg = val_err_total / (j+1)
+                    accuracy = correct * 100 / total_val
                     sw.add_scalar('loss/eval', val_err_avg, steps)
+                    sw.add_scalar('acc/eval', accuracy, steps)
             
                 model.train()
             
@@ -117,12 +125,12 @@ if __name__ == '__main__':
     parser.add_argument('--training_file', default='data/training.txt')
     parser.add_argument('--validation_file', default='data/validation.txt')
     parser.add_argument('--config', default='config/config_ac.json')
-    parser.add_argument('--training_epochs', default=3100, type=int)
+    parser.add_argument('--training_epochs', default=100, type=int)
     parser.add_argument('--stdout_interval', default=5, type=int)
     parser.add_argument('--checkpoint_interval', default=500, type=int)
     parser.add_argument('--summary_interval', default=100, type=int)
     parser.add_argument('--log_interval', default=10, type=int)
-    parser.add_argument('--validation_interval', default=1000, type=int)
+    parser.add_argument('--validation_interval', default=500, type=int)
 
     a = parser.parse_args()
 
