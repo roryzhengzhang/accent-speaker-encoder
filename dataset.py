@@ -30,7 +30,10 @@ class AccentDataset(torch.utils.data.Dataset):
         elif mel.size(0) > 300:
             mel = mel[:300, :]
         label = self.labels[index]
-        label_id = self.hparams.labels.index(label)
+        if self.hparams.encoder_mode == 'accent':
+            label_id = self.hparams.labels.index(label)
+        else:
+            label_id = int(label)
         return (mel, label_id)
 
     def __len__(self):

@@ -122,9 +122,9 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--checkpoint_path', default='checkpoint')
-    parser.add_argument('--training_file', default='data/training.txt')
-    parser.add_argument('--validation_file', default='data/validation.txt')
-    parser.add_argument('--config', default='config/config_ac.json')
+    parser.add_argument('--training_file', default='speaker_data/training.txt')
+    parser.add_argument('--validation_file', default='speaker_data/validation.txt')
+    parser.add_argument('--config', default='config/config_sr.json')
     parser.add_argument('--training_epochs', default=100, type=int)
     parser.add_argument('--stdout_interval', default=5, type=int)
     parser.add_argument('--checkpoint_interval', default=500, type=int)

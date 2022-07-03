@@ -25,5 +25,6 @@
 
     "num_workers": 4,
 
+    "encoder_mode": "accent",
     "audio_dir": "data/recording_chunks"
 }
