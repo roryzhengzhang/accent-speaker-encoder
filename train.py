@@ -19,6 +19,7 @@ def train(args, hparams):
     model = ResNet34(hparams.blocks_each_layer, num_classes=hparams.num_classes)
     model.to(device)
     optimizer = torch.optim.AdamW(model.parameters(), hparams.learning_rate, betas=[hparams.adam_b1, hparams.adam_b2])
+    checkpoint = None
 
     if os.path.isdir(args.checkpoint_path):
         checkpoint = scan_checkpoint(a.checkpoint_path, 'checkpoint_')
