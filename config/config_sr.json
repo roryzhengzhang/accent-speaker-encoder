@@ -1,0 +1,30 @@
+{
+    "seed": 1234,
+    "adam_b1": 0.8,
+    "adam_b2": 0.99,
+    "learning_rate": 0.0002,
+    "batch_size": 128,
+    "lr_decay": 0.999,
+    "num_gpus": 0,
+
+    "blocks_each_layer": [3, 4, 6, 3],
+    "num_classes": 1251,
+
+    "num_mels": 257,
+    "n_fft": 256,
+    "hop_size": 160,
+    "win_size": 400,
+
+    "init_sampling_rate": 16000,
+    "target_sampling_rate": 16000,
+
+    "labels": ["arabic", "dutch", "english", "french", "german", "italian", "korean", "mandarin", "polish", "portuguese", "russian", "spanish", "turkish"],
+
+    "fmin": 0,
+    "fmax": 8000,
+
+    "num_workers": 4,
+
+    "encoder_mode": "speaker",
+    "audio_dir": "speaker_data/recording_chunks"
+}
