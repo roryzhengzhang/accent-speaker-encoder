@@ -68,6 +68,7 @@ def train(args, hparams):
 
             accs = cal_topk_accuracy(y_hat, y, topk=(1,5))
 
+            prin(f"accuracy type: {type(accs[0])}")
             print(f"top-1 accuracy: {accs[0]}, top-5 accuracy: {accs[1]}")
 
             optimizer.zero_grad()
@@ -100,6 +101,7 @@ def train(args, hparams):
                 torch.cuda.empty_cache()
                 correct_top1 = 0
                 correct_top5 = 0
+                val_err_avg = 0
                 with torch.no_grad():
                     for j, batch in enumerate(val_loader):
                         x, y = batch
@@ -107,11 +109,13 @@ def train(args, hparams):
                         y_hat = model(x.to(device))
                         y = y.to(device)
                         loss_val = loss(y_hat, y)
+                        val_err_avg += loss_val
                         c1, c5 = cal_topk_accuracy(y_hat, y, (1,5))
                         correct_top1 += c1 * hparams.val_batch_size
                         correct_top5 += c5 * hparams.val_batch_size
                     acc_t1 = correct_top1 / len(valset)
                     acc_t5 = correct_top5 / len(valset)
+                    val_err_avg = val_err_avg / len(val_loader)
                     sw.add_scalar('loss/eval', val_err_avg, steps)
                     sw.add_scalar('acc_top1/eval', acc_t1, steps)
                     sw.add_scalar('acc_top5/eval', acc_t5, steps)
