@@ -1,12 +1,43 @@
 import glob
 import os
 import re
+import torch
 import pandas as pd
 import librosa
 import argparse
 import numpy as np
 from pathlib import Path
 from pydub import AudioSegment
+
+
+# refer to: https://discuss.pytorch.org/t/top-k-error-calculation/48815/2
+'''
+    Calculate the topk accuracy (only for single classification)
+    topk: list of k we consider
+'''
+def cal_topk_accuracy(output, target, topk=(1,)):
+    with torch.no_grad():
+        maxk = max(topk)
+        batch_size = target.size(0)
+
+        # get top maxk indicies that correspond to the most likely probability scores
+        _, y_pred = output.topk(k=maxk, dim=1)
+        # [B, maxk] -> [maxk, B] Expects input to be <= 2-D tensor and transposes dimensions 0 and 1.
+        y_pred = y_pred.t()
+        # [B] -> [B, 1] -> [maxk, B]
+        target_reshaped = target.view(1, -1).expand_as(y_pred)
+        # [maxk, B] were for each example we know which topk prediction matched truth
+        correct = (y_pred == target_reshaped)
+
+        list_topk_accs = []
+        for k in topk:
+            ind_which_topk_matched_truth = correct[:k]
+            flattened_indicator_which_topk_matched_truth = ind_which_topk_matched_truth.reshape(-1).float()  # [k, B] -> [kB]
+            tot_correct_topk = flattened_indicator_which_topk_matched_truth.float().sum(dim=0, keepdim=True)  # [kB] -> [1]
+            topk_acc = tot_correct_topk / batch_size
+            list_topk_accs.append(topk_acc.float())
+        return list_topk_accs
+
 
 '''
     get_filtered_filelist: filter out the accents with less than 30 speakers and prepare the training filelist
