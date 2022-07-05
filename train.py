@@ -69,7 +69,7 @@ def train(args, hparams):
             accs = cal_topk_accuracy(y_hat, y, topk=(1,5))
 
             print(f"accuracy type: {type(accs[0])}")
-            print(f"top-1 accuracy: {accs[0]}, top-5 accuracy: {accs[1]}")
+            print(f"top-1 accuracy: {accs[0].float()}, top-5 accuracy: {accs[1].float()}")
 
             optimizer.zero_grad()
             loss_train = loss(y_hat, y)
