@@ -10,6 +10,7 @@ from torch.utils.tensorboard import SummaryWriter
 from torch.utils.data import DataLoader
 from torch.nn import CrossEntropyLoss
 from utils import scan_checkpoint, load_checkpoint, save_checkpoint
+from data_utils import cal_topk_accuracy
 
 
 def train(args, hparams):
@@ -42,7 +43,7 @@ def train(args, hparams):
     
     valset = AccentDataset(args.validation_file, hparams)
     total_val = len(valset)
-    val_loader = DataLoader(valset, num_workers=1, shuffle=False, batch_size=1)
+    val_loader = DataLoader(valset, num_workers=1, shuffle=False, batch_size=hparams.val_batch_size)
     # tensorboard
     sw = SummaryWriter(os.path.join(args.checkpoint_path, 'logs'))
     train_start = time.time()
@@ -63,9 +64,11 @@ def train(args, hparams):
 
             x = torch.unsqueeze(x, 1)
 
-            print(f"x shape: {x.size()}, y shape: {y.size()}")
-
             y_hat = model(x)
+
+            accs = cal_topk_accuracy(y_hat, y, topk=(1,5))
+
+            print(f"top-1 accuracy: {accs[0]}, top-5 accuracy: {accs[1]}")
 
             optimizer.zero_grad()
             loss_train = loss(y_hat, y)
@@ -85,15 +88,18 @@ def train(args, hparams):
                                                 'steps': steps})
             
             if steps % args.summary_interval == 0:
+                acc_t1, acc_t5 = cal_topk_accuracy(y_hat, y, (1,5))
                 sw.add_scalar("loss/train", loss_train, steps)
                 sw.add_scalar('time/train', (time.time()-train_start)/60, steps)
+                sw.add_scalar('acc_top1/train', acc_t1, steps)
+                sw.add_scalar('acc_top5/train', acc_t5, steps)
             
             # Validation
             if steps % args.validation_interval == 0:
                 model.eval()
                 torch.cuda.empty_cache()
-                val_err_total = 0
-                correct = 0
+                correct_top1 = 0
+                correct_top5 = 0
                 with torch.no_grad():
                     for j, batch in enumerate(val_loader):
                         x, y = batch
@@ -101,13 +107,14 @@ def train(args, hparams):
                         y_hat = model(x.to(device))
                         y = y.to(device)
                         loss_val = loss(y_hat, y)
-                        val_err_total += loss_val
-                        correct += (y == y_hat).float().sum()
-                    
-                    val_err_avg = val_err_total / (j+1)
-                    accuracy = correct * 100 / total_val
+                        c1, c5 = cal_topk_accuracy(y_hat, y, (1,5))
+                        correct_top1 += c1 * hparams.val_batch_size
+                        correct_top5 += c5 * hparams.val_batch_size
+                    acc_t1 = correct_top1 / len(valset)
+                    acc_t5 = correct_top5 / len(valset)
                     sw.add_scalar('loss/eval', val_err_avg, steps)
-                    sw.add_scalar('acc/eval', accuracy, steps)
+                    sw.add_scalar('acc_top1/eval', acc_t1, steps)
+                    sw.add_scalar('acc_top5/eval', acc_t5, steps)
             
                 model.train()
             
@@ -116,6 +123,8 @@ def train(args, hparams):
 
         print(f"Time taken for epoch {epoch+1} is {int(time.time()-start)} sec \n")
             
+
+
 
 if __name__ == '__main__':
     print('Initializing Training Process...')
