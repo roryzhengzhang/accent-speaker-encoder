@@ -3,4 +3,4 @@ nohup python train.py \
 --training_file data/training.txt \
 --validation_file data/validation.txt \
 --config config/config_ac.json \
-2>&1 &
+> ac_train_log 2>&1 &
